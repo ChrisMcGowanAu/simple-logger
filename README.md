@@ -6,13 +6,14 @@ A simple logging library implemented in C99
 
 ## Usage
 **[log.c](src/log.c?raw=1)** and **[log.h](src/log.h?raw=1)** should be dropped
-into an existing project and compiled along with it. The library provides 6
+into an existing project and compiled along with it. The library provides 7
 function-like macros for logging:
 
 ```c
 log_trace(const char *fmt, ...);
 log_debug(const char *fmt, ...);
 log_info(const char *fmt, ...);
+log_note(const char *fmt, ...);
 log_warn(const char *fmt, ...);
 log_error(const char *fmt, ...);
 log_fatal(const char *fmt, ...);
@@ -27,7 +28,7 @@ log_trace("Hello %s", "world")
 Resulting in a line with the given format printed to stderr:
 
 ```
-20:18:26 TRACE src/main.c:11: Hello world
+20:18:26 TRACE main.c:11: Hello world
 ```
 
 
