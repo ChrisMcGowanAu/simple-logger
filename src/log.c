@@ -19,10 +19,14 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+// Modifed to allow for use in C__ and added "note" between info and warning
+// Modified to print out just the basename not the full filename
 
 #include "log.h"
-
+#include <stdlib.h>
+#include <libgen.h>
 #define MAX_CALLBACKS 32
+#define LOG_USE_COLOR
 
 typedef struct {
   log_LogFn fn;
@@ -40,12 +44,12 @@ static struct {
 
 
 static const char *level_strings[] = {
-  "TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
+  "TRACE", "DEBUG", "INFO", "NOTE", "WARN", "ERROR", "FATAL"
 };
 
 #ifdef LOG_USE_COLOR
 static const char *level_colors[] = {
-  "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
+  "\x1b[94m", "\x1b[36m", "\x1b[32m", "\x1b[34m", "\x1b[33m", "\x1b[31m", "\x1b[35m"
 };
 #endif
 
@@ -53,19 +57,24 @@ static const char *level_colors[] = {
 static void stdout_callback(log_Event *ev) {
   char buf[16];
   buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
+  char *filebase = basename((char *)ev->file);
 #ifdef LOG_USE_COLOR
   fprintf(
-    ev->udata, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+    (FILE *)ev->udata, "%s %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
     buf, level_colors[ev->level], level_strings[ev->level],
-    ev->file, ev->line);
+    // for full filename use
+    // ev->file, ev->line);
+    filebase, ev->line);
 #else
   fprintf(
-    ev->udata, "%s %-5s %s:%d: ",
-    buf, level_strings[ev->level], ev->file, ev->line);
+    (FILE *)ev->udata, "%s %-5s %s:%d: ",
+    // for full filename use
+    // buf, level_strings[ev->level], ev->file, ev->line);
+    buf, level_strings[ev->level], filebase, ev->line);
 #endif
-  vfprintf(ev->udata, ev->fmt, ev->ap);
-  fprintf(ev->udata, "\n");
-  fflush(ev->udata);
+  vfprintf((FILE *)ev->udata, ev->fmt, ev->ap);
+  fprintf((FILE *)ev->udata, "\n");
+  fflush((FILE *)ev->udata);
 }
 
 
@@ -73,11 +82,11 @@ static void file_callback(log_Event *ev) {
   char buf[64];
   buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
   fprintf(
-    ev->udata, "%s %-5s %s:%d: ",
+    (FILE *)ev->udata, "%s %-5s %s:%d: ",
     buf, level_strings[ev->level], ev->file, ev->line);
-  vfprintf(ev->udata, ev->fmt, ev->ap);
-  fprintf(ev->udata, "\n");
-  fflush(ev->udata);
+  vfprintf((FILE *)ev->udata, ev->fmt, ev->ap);
+  fprintf((FILE *)ev->udata, "\n");
+  fflush((FILE *)ev->udata);
 }
 
 
@@ -156,6 +165,10 @@ void log_log(int level, const char *file, int line, const char *fmt, ...) {
 
   for (int i = 0; i < MAX_CALLBACKS && L.callbacks[i].fn; i++) {
     Callback *cb = &L.callbacks[i];
+    if ( cb == NULL || cb->udata == NULL ) {
+      fprintf(stderr,"Cannot open log file?\n");
+      exit(1); 
+    }
     if (level >= cb->level) {
       init_event(&ev, cb->udata);
       va_start(ev.ap, fmt);
