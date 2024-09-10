@@ -2,6 +2,9 @@
 A simple logging library implemented in C99 
 Modified to compile and link with C++
 
+This is a fork of rti/log.c 
+I found this simple logger very usefull, and have made some small mods to suit server projects I have soeked on.
+
 ![screenshot](https://cloud.githubusercontent.com/assets/3920290/23831970/a2415e96-0723-11e7-9886-f8f5d2de60fe.png)
 
 
